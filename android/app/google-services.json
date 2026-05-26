@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "760129886682",
+    "project_id": "divine-beauty-5c0f4",
+    "storage_bucket": "divine-beauty-5c0f4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760129886682:android:eb1060e1b966d926afc8e3",
+        "android_client_info": {
+          "package_name": "com.example.divine_beauty"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC62W4waN6Kt1ZZxUVW_tFm7r16GT0AGHg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
