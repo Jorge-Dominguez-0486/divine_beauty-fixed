@@ -684,7 +684,6 @@ class _AdminCrudWidgetState extends State<AdminCrudWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final esMobile = MediaQuery.of(context).size.width < 600;
     return Column(
       children: [
         Padding(
@@ -747,96 +746,110 @@ class _AdminCrudWidgetState extends State<AdminCrudWidget> {
                 );
               }
 
-              if (esMobile) {
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: filtrados.length,
-                  itemBuilder: (context, index) {
-                    final item = filtrados[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...(_campos.length > 3 ? _campos.take(3) : _campos)
-                                .map((campo) {
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: filtrados.length,
+                itemBuilder: (context, index) {
+                  final item = filtrados[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ..._campos.map((campo) {
+                            if (campo.tipo == AdminFieldType.imagen) {
+                              final url = item[campo.nombre]?.toString() ?? '';
                               return Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Row(children: [
-                                  Text('${campo.etiqueta}: ',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13)),
-                                  Expanded(
-                                    child: Text(_valorCampo(item, campo),
-                                        overflow: TextOverflow.ellipsis),
-                                  ),
-                                ]),
-                              );
-                            }),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit,
-                                          size: 20,
-                                          color: AppTheme.primaryColor),
-                                      onPressed: () =>
-                                          _abrirFormulario(item: item),
+                                    Text(campo.etiqueta,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13)),
+                                    const SizedBox(height: 4),
+                                    if (url.isNotEmpty)
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          url,
+                                          height: 140,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              Container(
+                                            height: 140,
+                                            color: Colors.grey.shade200,
+                                            child: const Center(
+                                                child: Icon(Icons.broken_image,
+                                                    color: Colors.grey)),
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Container(
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: const Center(
+                                          child: Icon(
+                                              Icons.image_outlined,
+                                              size: 32,
+                                              color: Colors.grey),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 120,
+                                      child: Text('${campo.etiqueta}:',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13)),
                                     ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete,
-                                          size: 20, color: Colors.red),
-                                      onPressed: () => _eliminar(item['id']),
+                                    Expanded(
+                                      child: Text(_valorCampo(item, campo)),
                                     ),
                                   ]),
-                            ),
-                          ],
-                        ),
+                            );
+                          }),
+                          const Divider(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit,
+                                    size: 20,
+                                    color: AppTheme.primaryColor),
+                                onPressed: () =>
+                                    _abrirFormulario(item: item),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    size: 20, color: Colors.red),
+                                onPressed: () => _eliminar(item['id']),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                );
-              }
-
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: DataTable(
-                  columns: [
-                    ..._campos.map((c) => DataColumn(
-                        label: Text(c.etiqueta,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)))),
-                    const DataColumn(label: Text('Acciones')),
-                  ],
-                  rows: filtrados.map((item) {
-                    return DataRow(cells: [
-                      ..._campos.map((c) => DataCell(
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 150),
-                              child: Text(_valorCampo(item, c),
-                                  overflow: TextOverflow.ellipsis),
-                            ),
-                          )),
-                      DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit,
-                              size: 18, color: AppTheme.primaryColor),
-                          onPressed: () => _abrirFormulario(item: item),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete,
-                              size: 18, color: Colors.red),
-                          onPressed: () => _eliminar(item['id']),
-                        ),
-                      ])),
-                    ]);
-                  }).toList(),
-                ),
+                    ),
+                  );
+                },
               );
             },
           ),

@@ -111,18 +111,23 @@ class ProductCard extends StatelessWidget {
         ),
       );
     }
-    return CachedNetworkImage(
-      imageUrl: producto.imagenPrincipalUrl,
-      fit: BoxFit.cover,
-      placeholder: (_, __) => Shimmer.fromColors(
-        baseColor: Colors.grey.shade300,
-        highlightColor: Colors.grey.shade100,
-        child: Container(color: Colors.white),
-      ),
-      errorWidget: (_, __, ___) => Container(
-        color: AppTheme.surfaceColor,
-        child: const Icon(Icons.face_retouching_natural,
-            size: 40, color: AppTheme.primaryColor),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: CachedNetworkImage(
+        imageUrl: producto.imagenPrincipalUrl,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Container(color: Colors.white),
+        ),
+        errorWidget: (_, __, ___) => Container(
+          color: AppTheme.surfaceColor,
+          child: const Icon(Icons.face_retouching_natural,
+              size: 40, color: AppTheme.primaryColor),
+        ),
       ),
     );
   }
