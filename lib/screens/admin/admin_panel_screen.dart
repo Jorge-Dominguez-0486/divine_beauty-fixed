@@ -10,7 +10,7 @@ import '../../config/app_theme.dart';
 import '../home/home_screen.dart';
 
 // ✅ CORRECCIÓN: se agrega el tipo "imagen" al enum
-enum AdminFieldType { texto, numero, booleano, seleccion, imagen }
+enum AdminFieldType { texto, numero, booleano, seleccion, imagen, relacionFB }
 
 class AdminField {
   final String nombre;
@@ -18,8 +18,9 @@ class AdminField {
   final AdminFieldType tipo;
   final bool requerido;
   final List<String>? opciones;
+  final String? coleccionRef; // colección de Firestore para tipo relacionFB
   const AdminField(this.nombre, this.etiqueta, this.tipo,
-      {this.requerido = false, this.opciones});
+      {this.requerido = false, this.opciones, this.coleccionRef});
 }
 
 class AdminConfig {
@@ -39,10 +40,13 @@ class AdminConfig {
     AdminField('descripcion', 'Descripción', AdminFieldType.texto),
     AdminField('precio', 'Precio', AdminFieldType.numero, requerido: true),
     AdminField('stock', 'Stock', AdminFieldType.numero),
-    AdminField('categoriaId', 'ID Categoría', AdminFieldType.texto),
-    AdminField('marcaId', 'ID Marca', AdminFieldType.texto),
+    AdminField('categoriaId', 'Categoría', AdminFieldType.relacionFB,
+        coleccionRef: FirestoreService.colCategorias, requerido: true),
+    AdminField('marcaId', 'Marca', AdminFieldType.relacionFB,
+        coleccionRef: FirestoreService.colMarcas),
     // ✅ CORRECCIÓN: campo imagen en lugar de texto plano
-    AdminField('imagenPrincipalUrl', 'Imagen del Producto', AdminFieldType.imagen),
+    AdminField(
+        'imagenPrincipalUrl', 'Imagen del Producto', AdminFieldType.imagen),
     AdminField('activo', 'Activo', AdminFieldType.booleano),
   ];
   static const List<AdminField> variantes = [
@@ -798,10 +802,8 @@ class _AdminCrudWidgetState extends State<AdminCrudWidget> {
                                               BorderRadius.circular(8),
                                         ),
                                         child: const Center(
-                                          child: Icon(
-                                              Icons.image_outlined,
-                                              size: 32,
-                                              color: Colors.grey),
+                                          child: Icon(Icons.image_outlined,
+                                              size: 32, color: Colors.grey),
                                         ),
                                       ),
                                   ],
@@ -811,8 +813,7 @@ class _AdminCrudWidgetState extends State<AdminCrudWidget> {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     SizedBox(
                                       width: 120,
@@ -833,10 +834,8 @@ class _AdminCrudWidgetState extends State<AdminCrudWidget> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.edit,
-                                    size: 20,
-                                    color: AppTheme.primaryColor),
-                                onPressed: () =>
-                                    _abrirFormulario(item: item),
+                                    size: 20, color: AppTheme.primaryColor),
+                                onPressed: () => _abrirFormulario(item: item),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.delete,
@@ -907,8 +906,8 @@ class _AdminFormDialogState extends State<AdminFormDialog> {
 
     try {
       final bytes = await picked.readAsBytes();
-      final uri = Uri.parse(
-          'https://api.cloudinary.com/v1_1/dgxc8kk3k/image/upload');
+      final uri =
+          Uri.parse('https://api.cloudinary.com/v1_1/dgxc8kk3k/image/upload');
 
       final request = http.MultipartRequest('POST', uri)
         ..fields['upload_preset'] = 'key_caps'
@@ -919,9 +918,10 @@ class _AdminFormDialogState extends State<AdminFormDialog> {
         ));
 
       final response = await request.send().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw Exception('Tiempo agotado. Verifica tu conexión.'),
-      );
+            const Duration(seconds: 30),
+            onTimeout: () =>
+                throw Exception('Tiempo agotado. Verifica tu conexión.'),
+          );
 
       if (response.statusCode == 200) {
         final body = await response.stream.bytesToString();
@@ -1053,6 +1053,50 @@ class _AdminFormDialogState extends State<AdminFormDialog> {
             validator: campo.requerido
                 ? (v) => v == null || v.isEmpty ? 'Campo requerido' : null
                 : null,
+          ),
+        );
+
+      case AdminFieldType.relacionFB:
+        final colRef = campo.coleccionRef ?? '';
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: FirebaseFirestore.instance.collection(colRef).get().then(
+                  (s) => s.docs.map((d) {
+                    final data = d.data();
+                    data['id'] = d.id;
+                    return data;
+                  }).toList(),
+                ),
+            builder: (context, snapshot) {
+              final items = snapshot.data ?? [];
+              final currentVal = _valores[campo.nombre]?.toString();
+              // Si el valor actual no está en la lista, lo limpiamos
+              final validVal =
+                  items.any((i) => i['id'] == currentVal) ? currentVal : null;
+              return DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: campo.etiqueta,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                value: validVal,
+                hint: snapshot.connectionState == ConnectionState.waiting
+                    ? const Text('Cargando...')
+                    : Text('Seleccionar ${campo.etiqueta}'),
+                items: items
+                    .map((item) => DropdownMenuItem<String>(
+                          value: item['id'] as String,
+                          child: Text(item['nombre'] ?? item['id']),
+                        ))
+                    .toList(),
+                onChanged: (v) =>
+                    setState(() => _valores[campo.nombre] = v ?? ''),
+                validator: campo.requerido
+                    ? (v) => v == null || v.isEmpty ? 'Campo requerido' : null
+                    : null,
+              );
+            },
           ),
         );
 

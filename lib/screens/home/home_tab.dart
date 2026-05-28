@@ -33,7 +33,7 @@ class _HomeTabState extends State<HomeTab> {
         }
 
         final productosFiltrados = _busqueda.isEmpty
-            ? catalogo.destacados
+            ? catalogo.productosFiltrados
             : catalogo.productos
                 .where((p) =>
                     p.nombre.toLowerCase().contains(_busqueda.toLowerCase()))
@@ -91,7 +91,14 @@ class _HomeTabState extends State<HomeTab> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Destacados',
+                    Text(
+                        catalogo.categoriaFiltro != null
+                            ? (catalogo
+                                    .obtenerCategoriaPorId(
+                                        catalogo.categoriaFiltro!)
+                                    ?.nombre ??
+                                'Productos')
+                            : 'Destacados',
                         style: Theme.of(context).textTheme.titleLarge),
                     if (catalogo.categoriaFiltro != null)
                       TextButton(
